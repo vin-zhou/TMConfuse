@@ -11,6 +11,8 @@
 @interface ViewController ()
 ///懒加载property测试
 @property (nonatomic, strong) NSMutableArray *testArray;
+@property (nonatomic, retain) UITableViewCell *inviteCell;  // Invite outside
+
 @end
 
 @implementation ViewController
@@ -52,5 +54,18 @@
     }
     return _testArray;
 }
+
+- (UITableViewCell*)inviteCell
+{
+    if (!_inviteCell)
+    {
+        _inviteCell = [[UITableViewCell alloc] initWithStyle: UITableViewCellStyleDefault reuseIdentifier:nil];
+        
+        _inviteCell.textLabel.text = NSLocalizedString(@"Members in your organization only", @"");
+    }
+    
+    return _inviteCell;
+}
+
 
 @end

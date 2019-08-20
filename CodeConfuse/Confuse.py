@@ -1,14 +1,16 @@
 #!/usr/bin/python3
-# -*- coding: utf-8 -*-
-#https://github.com/LennonChin/Code-Confuse-Plugin/blob/master/README_zh-cn.md
-#系统库路径/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator.sdk/System/Library/Frameworks
+# -*- Also compatible with Python2 -*- coding: utf-8 -*-
+# 
+from __future__ import unicode_literals
 import os
 import re
-import uuid
 import sys
-import getopt
 import random
 from datetime import datetime
+
+isPython2 = sys.version_info < (3, 0)
+if isPython2:
+    from io import open
 
 
 class ConfuseBiz(object):
@@ -24,28 +26,28 @@ class ConfuseBiz(object):
         for input_dir in input_dirs:
             log_info("Start scanning system direction {0}".format(input_dir), 0, True)
             if not os.path.isdir(input_dir):
+                log_info("System direction {0} doesn't exist.".format(input_dir), 0, True)
                 exit(-1)
+            if suffixs:
+                re_str = '.*\.[' + ''.join(suffixs) + ']$'
+            pattern_suffix = re.compile(r'' + re_str)
             for filename in os.listdir(input_dir):
-                if os.path.isdir(os.path.join(input_dir, filename)):
+                path = os.path.join(input_dir, filename)
+                if os.path.isdir(path):
+                    shouldExclude = False
                     if exclusive_dirs:
                         for exclusive_dir in exclusive_dirs:
-                            if os.path.join(input_dir, filename) == os.path.realpath(exclusive_dir):
-                                log_info('Skipping system direction {0}'.format(os.path.join(input_dir, filename)), 2,
+                            if path.startswith(exclusive_dir):
+                                log_info('Skipping system direction {0}'.format(path), 2,
                                          True)
-                                continue
-                            else:
-                                filelist.extend(
-                                    ConfuseBiz.scan_path([os.path.join(input_dir, filename)], exclusive_dirs, suffixs))
-                    else:
-                        filelist.extend(
-                            ConfuseBiz.scan_path([os.path.join(input_dir, filename)], exclusive_dirs, suffixs))
+                                shouldExclude = True
+                                break
+                    if not shouldExclude:
+                        filelist.extend(ConfuseBiz.scan_path([path], exclusive_dirs, suffixs))
                 else:
-                    if suffixs:
-                        re_str = '.*\.[' + ''.join(suffixs) + ']$'
-                    pattern_suffix = re.compile(r'' + re_str)
                     matches = re.match(pattern_suffix, filename)
                     if matches:
-                        filelist.append((input_dir, filename))
+                        filelist.append(path)
         return filelist
 
     @staticmethod
@@ -131,137 +133,103 @@ class ConfuseBiz(object):
         fifthArray = ['Info', 'Count', 'Name', 'SystemId', 'Title', 'Topic', 'Action']
         word = random.choice(firstArray) + random.choice(secondArray) + random.choice(thirdArray) + random.choice(forthArray) + random.choice(fifthArray)
         return word
-#        word_file = "/usr/share/dict/words"
-#        WORDS = open(word_file).read().splitlines()
-#        word = random.choice(WORDS).lower()
-#        word += random.choice(WORDS).capitalize()
+    #        word_file = "/usr/share/dict/words"
+    #        WORDS = open(word_file).read().splitlines()
+    #        word = random.choice(WORDS).lower()
+    #        word += random.choice(WORDS).capitalize()
 
     # 生成唯一的字符串
-#        seeds = 'abcdefghijklmnopqrst'
-#        uid = str(uuid.uuid3(uuid.NAMESPACE_DNS, text))
-#        uid = "".join(uid.split('-'))
-#        result = ""
-#        for c in uid:
-#            try:
-#                num = int(c)
-#                result += seeds[num]
-#            except Exception as e:
-#                result += c
-#        return result.upper()
+    #        seeds = 'abcdefghijklmnopqrst'
+    #        uid = str(uuid.uuid3(uuid.NAMESPACE_DNS, text))
+    #        uid = "".join(uid.split('-'))
+    #        result = ""
+    #        for c in uid:
+    #            try:
+    #                num = int(c)
+    #                result += seeds[num]
+    #            except Exception as e:
+    #                result += c
+    #        return result.upper()
 
     # 生成混淆文件
     @staticmethod
     def create_confuse_file(output_file, confused_dict):
         log_info("Start creating confuse file, file fullpath is {0}".format(os.path.realpath(output_file)), 2, True)
         f = open(output_file, 'wb')
-        f.write(bytes('#ifndef NEED_CONFUSE_h\n', encoding='utf-8'))
-        f.write(bytes('#define NEED_CONFUSE_h\n', encoding='utf-8'))
-        f.write(bytes('// 生成时间： {0}\n'.format(datetime.now().strftime('%Y-%m-%d %H:%M:%S')), encoding='utf-8'))
-        for (key, value) in confused_dict.items():
-            f.write(bytes('#define {0} {1}\n'.format(key, value), encoding='utf-8'))
-        f.write(bytes('#endif', encoding='utf-8'))
+        if isPython2:
+            f.write(bytes('#ifndef NEED_CONFUSE_h\n').encode('utf-8'))
+            f.write(bytes('#define NEED_CONFUSE_h\n').encode('utf-8'))
+            f.write(bytes('// create time: {0}\n'.format(datetime.now().strftime('%Y-%m-%d %H:%M:%S'))).encode('utf-8'))
+            for (key, value) in confused_dict.items():
+                f.write(bytes('#define {0} {1}\n'.format(key, value)).encode('utf-8'))
+            f.write(bytes('#endif').encode('utf-8'))
+        else:
+            f.write(bytes('#ifndef NEED_CONFUSE_h\n', encoding='utf-8'))
+            f.write(bytes('#define NEED_CONFUSE_h\n', encoding='utf-8'))
+            f.write(bytes('// 生成时间： {0}\n'.format(datetime.now().strftime('%Y-%m-%d %H:%M:%S')), encoding='utf-8'))
+            for (key, value) in confused_dict.items():
+                f.write(bytes('#define {0} {1}\n'.format(key, value), encoding='utf-8'))
+            f.write(bytes('#endif', encoding='utf-8'))
         f.close()
         log_info("Complete create confuse file", 2, True)
 
 
 class DealUserFile(object):
+    """
+    整理 Input Source codes
+    """
+    
     def __init__(self, input_dirs, exclusive_dirs):
         self.input_dirs = input_dirs
         self.exclusive_dirs = exclusive_dirs
-
-    # 排除属性property的关键字（防止懒加载方法名造成冲突）
-    def parse_user_property(self):
-        user_file_paths = ConfuseBiz.scan_path(self.input_dirs, self.exclusive_dirs, ['h', 'm'])
-        user_identifiers = []
-        for file_path, filename in user_file_paths:
-            property_array = self.__parse_user_file_property(file_path, filename)
-            if len(property_array):
-                user_identifiers += property_array
-
-        # 对字典去重
-        return sorted(list(set(user_identifiers)))
-
-    # 需要排除属性property的关键字（防止懒加载方法名造成冲突）
-    def __parse_user_file_property(self, file_path, filename):
-        file_local = os.path.join(file_path, filename)
-        file_lines = ConfuseBiz.pre_format_file(file_local)
-        # 读取文件行
-        property_array = []
-        for line in file_lines:
-            # @property
-            if line.startswith('@property'):
-                pattern_search = re.compile(r'[\s+|*](\w*);$')
-                matches = re.findall(pattern_search, line)
-                if matches:
-                    property_array += matches
-
-        return property_array
-
-    # 排除IBAction方法的关键字（IBAction重名遗漏）
-    def parse_user_action(self):
-        user_file_paths = ConfuseBiz.scan_path(self.input_dirs, self.exclusive_dirs, ['h', 'm'])
-        user_identifiers = []
-        for file_path, filename in user_file_paths:
-            action_array = self.__parse_user_file_action(file_path, filename)
-            if len(action_array):
-                user_identifiers += action_array
-
-        # 对字典去重
-        return sorted(list(set(user_identifiers)))
-
-    # 排除IBAction方法的关键字（IBAction重名遗漏）
-    def __parse_user_file_action(self, file_path, filename):
-        file_local = os.path.join(file_path, filename)
-        file_lines = ConfuseBiz.pre_format_file(file_local)
-        # 读取文件行
-        action_array = []
-        for line in file_lines:
-            if 'IBAction' in line:
-                func_regex = '\s*(\w+)\s*:\s*\(\s*\w*\s*\s*\w+\s*\*?\s*\)\s*\w+\s*'
-                matches = re.findall(func_regex, line)
-                if matches:
-                    action_array += matches
-
-        return action_array
 
     # 挑选需要关键字
     def parse_user_identifiers(self):
         user_file_paths = ConfuseBiz.scan_path(self.input_dirs, self.exclusive_dirs, ['h', 'm'])
         user_identifiers = []
-        for file_path, filename in user_file_paths:
-            identifier_array = self.__parse_user_file_content(file_path, filename)
-            if len(identifier_array):
-                user_identifiers += identifier_array
-
-        user_property = self.parse_user_property()
-        user_action = self.parse_user_action()
+        user_properties = []
+        user_actions = []
+        for file_full_path in user_file_paths:
+            (identifiers, properties, actions) = self.__parse_user_file_content(file_full_path)
+            user_identifiers += identifiers
+            user_properties += properties
+            user_actions += actions
 
         # 对字典去重
-        user_identifiers = list(set(user_identifiers).difference(set(user_property)))
-        user_identifiers = list(set(user_identifiers).difference(set(user_action)))
+        user_identifiers = list(set(user_identifiers).difference(set(user_properties)))
+        user_identifiers = list(set(user_identifiers).difference(set(user_actions)))
         return sorted(user_identifiers)
 
-    # 挑选用户文件中的关键字
-    def __parse_user_file_content(self, file_path, filename):
-        file_local = os.path.join(file_path, filename)
+    # 挑选用户文件中的关键字, 去掉IBAction, init, property, 更严格些
+    def __parse_user_file_content(self, file_full_path):
+        file_local = file_full_path
         file_lines = ConfuseBiz.pre_format_file(file_local)
         # 读取文件行
         identifier_array = []
+        user_property = []
+        user_action = []
         # 一行一行的读取文件
         log_info("Start extracting confusing identifiers {0} ".format(file_local), 0, True)
         for line in file_lines:
-            # 去除后面的注释
-            search_comment_index = line.find('//')
-            if search_comment_index != -1:
-                line = line[:search_comment_index - 1]
-            # 单行注释、宏定义内容不用管
+            # 宏定义内容不用管
             if line.startswith('#'):
                 continue
-            # xib连线不用管
+            # xib连线
             if 'IBAction' in line:
+                func_regex = '\s*(\w+)\s*:\s*\(\s*\w*\s*\s*\w+\s*\*?\s*\)\s*\w+\s*'
+                matches = re.findall(func_regex, line)
+                if matches:
+                    user_action += matches
                 continue
             # init开头的方法不用管
             if 'init' in line:
+                continue
+            # 去掉property, 防止懒加载
+            if line.startswith('@property'):
+                pattern_search = re.compile(r'[\s+|*](\w*);.*$')
+                matches = re.findall(pattern_search, line)
+                if matches:
+                    user_property += matches
                 continue
             # 方法名
             if '+' in line or '-' in line:
@@ -285,7 +253,7 @@ class DealUserFile(object):
                             continue
 
                         identifier_array.append(match)
-        return identifier_array
+        return (identifier_array, user_property, user_action)
 
 
 class DealSystemIdentifiers(object):
@@ -299,8 +267,8 @@ class DealSystemIdentifiers(object):
     def parse_system_identifiers(self):
         system_file_paths = ConfuseBiz.scan_path(self.system_file_dirs, None, ['h'])
         system_identifiers = []
-        for file_path, filename in system_file_paths:
-            identifier_array = self.__parse_system_file_content(file_path, filename)
+        for file_full_path in system_file_paths:
+            identifier_array = self.__parse_system_file_content(file_full_path)
             if len(identifier_array):
                 system_identifiers += identifier_array
 
@@ -308,8 +276,8 @@ class DealSystemIdentifiers(object):
         return sorted(list(set(system_identifiers)))
 
     # 挑选系统文件中的关键字
-    def __parse_system_file_content(self, file_path, filename):
-        file_local = os.path.join(file_path, filename)
+    def __parse_system_file_content(self, file_full_path):
+        file_local = file_full_path
         file_lines = ConfuseBiz.pre_format_file(file_local)
         identifier_array = []
         # 读取文件行
@@ -341,24 +309,24 @@ class DealCleanIdentifers(object):
     def parse_clean_identifiers(self):
         clean_file_paths = ConfuseBiz.scan_path(self.clean_file_dirs, None, ['h', 'm'])
         clean_identifiers = []
-        for file_path, filename in clean_file_paths:
-            identifier_array = self.__parse_clean_file_content(file_path, filename)
+        for file_full_path in clean_file_paths:
+            identifier_array = self.__parse_clean_file_content(file_full_path)
             if len(identifier_array):
                 clean_identifiers += identifier_array
 
         # 对字典去重并排序
         return sorted(list(set(clean_identifiers)))
 
-    # 挑选需要排除的文件中的关键字
-    def __parse_clean_file_content(self, file_path, filename):
-        file_local = os.path.join(file_path, filename)
+    # 挑选需要排除的文件中的关键字, 包含了property, _变量，block，方法, 方法参数等，更广泛些
+    def __parse_clean_file_content(self, file_full_path):
+        file_local = file_full_path
         file_lines = ConfuseBiz.pre_format_file(file_local)
         # 读取文件行
         identifier_array = []
         for line in file_lines:
             # @property
             if line.startswith('@property'):
-                pattern_search = re.compile(r'[\s+|*](\w*);$')
+                pattern_search = re.compile(r'[\s+|*](\w*);.*$')
                 matches = re.findall(pattern_search, line)
                 if matches:
                     identifier_array += matches
@@ -374,7 +342,7 @@ class DealCleanIdentifers(object):
                 matches = re.findall(pattern_search, line)
                 if matches:
                     identifier_array += matches
-            # 方法名
+            # 方法名，参数等
             if '+' in line or '-' in line:
                 # 判断参数个数
                 parameter_pattern = re.compile(r'.*?(\(.*?\)).*?')
@@ -444,13 +412,16 @@ def log_info(info, level=1, to_log_file=False):
         print('\033[0;31m╚═════════════════════════════════════════════════════════════════════════╝\033[0m')
     if to_log_file:
         # 写入文件
-        log_file.write('{0}\n'.format(print_infos))
+        if isPython2:
+            log_file.write('{0}\n'.format(print_infos))
+        else:
+            log_file.write('{0}\n'.format(print_infos))
 
 
 def usage():
     help_info = """
 -i\t必须，项目需要处理的主要文件所在的目录
--s\t可选，配置系统Framework文件的目录，一般用于做排除字典，避免替换系统关键字
+-s\t可选，配置系统Framework文件的目录，一般用于做排除字典，避免替换系统关键字，iOS SDK path /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator.sdk/System/Library/Frameworks
 -e\t可选，用于存放不扫描处理的文件的目录，比如Swift文件目录
 -c\t可选，用于存放排除关键字的文件的目录，例如Pods下的目录，或者静态库（头文件修改后会出错）
 -k\t可选，用于存放需要过滤的key
@@ -458,7 +429,7 @@ def usage():
 
 Example:
 
-python3 /Users/wuaming/Desktop/TMConfuse/CodeConfuse/Confuse.py \
+python /Users/wuaming/Desktop/TMConfuse/CodeConfuse/Confuse.py \
 -i /Users/wuaming/Desktop/TMConfuse/TMConfuse \
 -s /Users/wuaming/Desktop/TMConfuse/System_Frameworks_iOS \
 -k /Users/wuaming/Desktop/TMConfuse/CodeConfuse/ignoreKey.txt \
@@ -466,42 +437,27 @@ python3 /Users/wuaming/Desktop/TMConfuse/CodeConfuse/Confuse.py \
 """
     print(help_info)
 
+def scanSystemIdentifiers(system_dirs):
+    log_info("Start scanning System identifiers...", 2, True)
+    system_identifiers = DealSystemIdentifiers(system_dirs).parse_system_identifiers()
+    log_info("Complete scan System identifiers...", 2, True)
+    return system_identifiers
 
 if __name__ == '__main__':
+    
+    # use relative path to set the config since it will be auto runed by Xcode.
+    cwd = os.getcwd() # for XCode, it's ${SRCROOT}, i.e. Zoom; for Python console, it's Zoom/Scripts.
+    workDir = cwd # for Xcode, use it directly.
+#    workDir = os.path.dirname(cwd) # for terminal, we should use it's parent folder.
 
     # 获取参数
-    options, args = getopt.getopt(sys.argv[1:], "hi:s:e:c:k:o:")
-    input_dirs = None  # 项目需要处理的主要文件所在的目录
-    system_dirs = None  # 配置系统Framework文件的目录，一般用于做排除字典，避免替换系统关键字
+    input_dirs = [os.path.join(workDir, "TMConfuse")]  # 项目需要处理的主要文件所在的目录
+    system_dirs = [os.path.join(workDir, "System_Frameworks_iOS")]  # 配置系统Framework文件的目录，一般用于做排除字典，避免替换系统关键字
+    # system_dirs = ["/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator.sdk/System/Library/Frameworks"]
     exclusive_dirs = None  # 用于存放不扫描处理的文件的目录，比如Swift文件目录
     clean_dirs = None  # 用于存放排除关键字的文件的目录，例如Pods下的目录，或者静态库（头文件修改后会出错）
-    ignore_key_dir = None  #用于存放需要过滤的key
-    output_dir = None  # 输出文件的目录，用于输出关键字、日志以及最后生成的混淆头文件的目录
-
-    for option, value in options:
-        if option == "-i":
-            input_dirs = value.split(',')
-        elif option == "-s":
-            system_dirs = value.split(',')
-        elif option == "-e":
-            exclusive_dirs = value.split(',')
-        elif option == "-c":
-            clean_dirs = value.split(',')
-        elif option == "-o":
-            output_dir = value
-        elif option == "-k":
-            ignore_key_dir = value
-        elif option == "-h":
-            usage()
-            sys.exit()
-
-    # 判断参数是否正确
-    if not input_dirs:
-        log_info("Reason: Exit in reason 请输入需要处理文件的目录。可使用-h参数查看帮助", 3, False)
-        sys.exit()
-    if not output_dir:
-        log_info('Reason: Exit in reason 请输入输出文件的目录。可使用-h参数查看帮助', 3, False)
-        sys.exit()
+    ignore_key_dir = os.path.join(workDir, "CodeConfuse/ignoreKey.txt")  #用于存放需要过滤的key
+    output_dir = os.path.join(workDir, "CodeConfuse")  # 输出文件的目录，用于输出关键字、日志以及最后生成的混淆头文件的目录
 
     # 保存配置信息
     configs = {
@@ -518,33 +474,28 @@ if __name__ == '__main__':
     log_file = open(os.path.join(output_dir, 'confuse_log.log'), 'w')
 
     # 获取系统文件关键字并写入文件
-    log_info("Start scanning System identifiers...", 2, True)
-    system_identifiers = DealSystemIdentifiers(system_dirs).parse_system_identifiers()
-    log_info("Complete scan System identifiers...", 2, True)
-
-    log_info("Start writing System identifiers into Dict File, File fullpath is {0}".format(
-        os.path.join(output_dir, 'system_identifiers.txt')), 1, True)
-    system_identifiers_record_file = open(os.path.join(output_dir, 'system_identifiers.txt'), 'wb')
-    for item in system_identifiers:
-        system_identifiers_record_file.write(bytes(item, encoding='utf-8'))
-        system_identifiers_record_file.write(bytes('\n', encoding='utf-8'))
-    # 关闭文件读写
-    system_identifiers_record_file.close()
-    log_info("Complete write System identifiers into Dict File", 1, True)
-
-    # 遍历排除关键字的文件目录，提取关键字，并写入文件
-    if clean_dirs:
-        log_info("Start scanning assign Clean identifiers...", 2, True)
-        clean_identifiers = DealCleanIdentifers(clean_dirs).parse_clean_identifiers()
-        log_info("Start writing Clean identifiers into Dict File, File fullpath is {0}".format(
-            os.path.join(output_dir, 'clean_identifiers.txt')), 1, True)
-        clean_identifiers_record_file = open(os.path.join(output_dir, 'clean_identifiers.txt'), 'wb')
-        for item in clean_identifiers:
-            clean_identifiers_record_file.write(bytes(item, encoding='utf-8'))
-            clean_identifiers_record_file.write(bytes('\n', encoding='utf-8'))
+    system_identifiers = []
+    system_identifiers_fileName = os.path.join(output_dir, 'system_identifiers.txt')
+    if os.path.getsize(system_identifiers_fileName): # file not empty, read directly
+        with open(system_identifiers_fileName, 'r') as f:
+            log_info("Read System identifiers directly from {0}".format(system_identifiers_fileName), 1, True)
+            for line in f:
+                system_identifiers.append(line.strip())
+    else:  # scan system_dirs and save values to file
+        system_identifiers = scanSystemIdentifiers(system_dirs)
+        log_info("Start writing System identifiers into Dict File, File fullpath is {0}".format(system_identifiers_fileName), 1, True)
+        system_identifiers_record_file = open(system_identifiers_fileName, 'wb')
+        if isPython2:
+            for item in system_identifiers:
+                system_identifiers_record_file.write(bytes(item).encode('utf-8'))
+                system_identifiers_record_file.write(bytes('\n').encode('utf-8'))
+        else:
+            for item in system_identifiers:
+                system_identifiers_record_file.write(bytes(item, encoding='utf-8'))
+                system_identifiers_record_file.write(bytes('\n', encoding='utf-8'))
         # 关闭文件读写
-        clean_identifiers_record_file.close()
-        log_info("Complete write Clean identifiers into Dict File", 1, True)
+        system_identifiers_record_file.close()
+        log_info("Complete write System identifiers into Dict File", 1, True)
 
     # 遍历用户指定目录，提取关键字，主要提取方法名
     log_info("Start scanning assign need deal files' identifiers...", 2, True)
@@ -557,6 +508,24 @@ if __name__ == '__main__':
 
     # 将排除目录的关键字去除
     if clean_dirs:
+        # 遍历排除关键字的文件目录，提取关键字，并写入文件
+        log_info("Start scanning assign Clean identifiers...", 2, True)
+        clean_identifiers = DealCleanIdentifers(clean_dirs).parse_clean_identifiers()
+        log_info("Start writing Clean identifiers into Dict File, File fullpath is {0}".format(
+            os.path.join(output_dir, 'clean_identifiers.txt')), 1, True)
+        clean_identifiers_record_file = open(os.path.join(output_dir, 'clean_identifiers.txt'), 'wb')
+        if isPython2:
+            for item in clean_identifiers:
+                clean_identifiers_record_file.write(bytes(item).encode('utf-8'))
+                clean_identifiers_record_file.write(bytes('\n').encode('utf-8'))
+        else:
+            for item in clean_identifiers:
+                clean_identifiers_record_file.write(bytes(item, encoding='utf-8'))
+                clean_identifiers_record_file.write(bytes('\n', encoding='utf-8'))
+        # 关闭文件读写
+        clean_identifiers_record_file.close()
+        log_info("Complete write Clean identifiers into Dict File", 1, True)
+        
         log_info("Start excluding clean identifiers...", 2, True)
         clean_intersect_identifiers = list(set(clean_identifiers).intersection(set(user_identifiers)))
         diff_identifiers = list(set(diff_identifiers).difference(set(clean_intersect_identifiers)))
@@ -573,8 +542,12 @@ if __name__ == '__main__':
         os.path.join(output_dir, 'user_identifiers.txt')), 2, True)
     user_identifiers_file = open(os.path.join(output_dir, 'user_identifiers.txt'), 'wb')
     for item in diff_identifiers:
-        user_identifiers_file.write(bytes(item, encoding='utf-8'))
-        user_identifiers_file.write(bytes('\n', encoding='utf-8'))
+        if isPython2:
+            user_identifiers_file.write(bytes(item).encode('utf-8'))
+            user_identifiers_file.write(bytes('\n').encode('utf-8'))
+        else:
+            user_identifiers_file.write(bytes(item, encoding='utf-8'))
+            user_identifiers_file.write(bytes('\n', encoding='utf-8'))
     user_identifiers_file.close()
     log_info("Complete write need deal files' identifiers into Dict File", 1, True)
 
@@ -582,7 +555,7 @@ if __name__ == '__main__':
     confused_dict = {}
     diff_dic = []
     for item in diff_identifiers:
-        randomNum = random.randint(0,3)
+        randomNum = random.randint(0,4)
         if randomNum == 0:
             confused_dict[item] = random.choice(['zndy_', 'tim_']) + item
         else:

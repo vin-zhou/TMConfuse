@@ -15,7 +15,6 @@
 		8945E5FA2073114F003C2F74 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 8945E5F92073114F003C2F74 /* main.m */; };
 		8945E60F20731666003C2F74 /* Confuse.py in Resources */ = {isa = PBXBuildFile; fileRef = 8945E60720731666003C2F74 /* Confuse.py */; };
 		8945E61120731666003C2F74 /* ignoreKey.txt in Resources */ = {isa = PBXBuildFile; fileRef = 8945E60920731666003C2F74 /* ignoreKey.txt */; };
-		8945E61220731666003C2F74 /* start.sh in Resources */ = {isa = PBXBuildFile; fileRef = 8945E60A20731666003C2F74 /* start.sh */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -32,7 +31,6 @@
 		8945E60620731666003C2F74 /* Confuse.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Confuse.h; sourceTree = "<group>"; };
 		8945E60720731666003C2F74 /* Confuse.py */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.script.python; path = Confuse.py; sourceTree = "<group>"; };
 		8945E60920731666003C2F74 /* ignoreKey.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = ignoreKey.txt; sourceTree = "<group>"; };
-		8945E60A20731666003C2F74 /* start.sh */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.script.sh; path = start.sh; sourceTree = "<group>"; };
 		8945E6172073174E003C2F74 /* TMPrefixHeader.pch */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = TMPrefixHeader.pch; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -87,7 +85,6 @@
 				8945E60620731666003C2F74 /* Confuse.h */,
 				8945E60720731666003C2F74 /* Confuse.py */,
 				8945E60920731666003C2F74 /* ignoreKey.txt */,
-				8945E60A20731666003C2F74 /* start.sh */,
 			);
 			path = CodeConfuse;
 			sourceTree = "<group>";
@@ -99,6 +96,7 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = 8945E5FD2073114F003C2F74 /* Build configuration list for PBXNativeTarget "TMConfuse" */;
 			buildPhases = (
+				C588C5F7230BE75B00101030 /* ShellScript */,
 				8945E5E32073114F003C2F74 /* Sources */,
 				8945E5E42073114F003C2F74 /* Frameworks */,
 				8945E5E52073114F003C2F74 /* Resources */,
@@ -155,11 +153,30 @@
 				8945E5F22073114F003C2F74 /* Main.storyboard in Resources */,
 				8945E60F20731666003C2F74 /* Confuse.py in Resources */,
 				8945E61120731666003C2F74 /* ignoreKey.txt in Resources */,
-				8945E61220731666003C2F74 /* start.sh in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		C588C5F7230BE75B00101030 /* ShellScript */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "# Type a script or drag a script file from your workspace to insert its path.\n/usr/bin/python  \"${SRCROOT}/CodeConfuse/Confuse.py\"\n";
+		};
+/* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		8945E5E32073114F003C2F74 /* Sources */ = {
