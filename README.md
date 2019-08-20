@@ -1,4 +1,33 @@
 # TMConfuse
+##2019-08-20更新：
+Forked from https://github.com/TMWu/TMConfuse .
+
+Have below improvements:
+
+1. Confuse.py support Python2.7;
+
+2. Fix property regex match bug;
+
+	```
+	  Case there's blank between ";" and "//" 
+	  @property(nonatomic, retain) UIView* view;  // this is a comment
+	```
+3. Code optimize for ConfuseBiz.scan_path;
+
+	Better traversal judgement, reduce scan times.
+   
+4. Code optimize for DealUserFile; 
+
+   Combine property and IBAction scan in parse_user_identifiers, reduce 2/3 scan times.
+
+
+5. Use RunScript to  do confuse automatically before compiling.
+	
+	* Add a runScript for the project;
+	* Use relative paths to load files and auto do confuse before hand when build the project.
+
+
+
 
 ## 6月6日更新：
 由于上架过程中混淆词汇中存在敏感词汇，被苹果爸爸拒了一次，所以修改随机单词拼接规则，由通用的单词拼接，可以自行修改
